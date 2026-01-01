@@ -1,7 +1,7 @@
 {
   "name": "expo-dynalinks-sdk",
   "version": "0.1.0",
-  "description": "My new module",
+  "description": "React Native SDK for Dynalinks (https://dynalinks.app)",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -21,13 +21,13 @@
     "expo-dynalinks-sdk",
     "ExpoDynalinksSdk"
   ],
-  "repository": "https://github.com/shubhamdeol/dynalinks-sdk.git",
+  "repository": "https://github.com/dynalinks/dynalinks-react-native-sdk",
   "bugs": {
-    "url": "https://github.com/shubhamdeol/dynalinks-sdk.git/issues"
+    "url": "https://github.com/dynalinks/dynalinks-react-native-sdk/issues"
   },
-  "author": "shubhamdeol <deol.shubham@gmail.com> (shubhamdeol)",
+  "author": "Dynalinks <admins@dynalinks.app>",
   "license": "MIT",
-  "homepage": "https://github.com/shubhamdeol/dynalinks-sdk.git#readme",
+  "homepage": "https://github.com/dynalinks/dynalinks-react-native-sdk#readme",
   "devDependencies": {
     "@types/react": "~19.1.0",
     "expo": "^54.0.27",

@@ -1,7 +1,7 @@
 {
   "name": "expo-module-template",
   "version": "11.0.18",
-  "description": "ExpoModuleTemplate standalone module",
+  "description": "React Native SDK for Dynalinks (https://dynalinks.app)",
   "scripts": {},
   "keywords": [
     "react-native",
@@ -10,15 +10,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/expo/expo.git",
-    "directory": "packages/expo-module-template"
+    "url": "https://github.com/dynalinks/dynalinks-react-native-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/expo/expo/issues"
+    "url": "https://github.com/dynalinks/dynalinks-react-native-sdk/issues"
   },
-  "author": "650 Industries, Inc.",
+  "author": "Dynalinks <admins@dynalinks.app>",
   "license": "MIT",
-  "homepage": "https://docs.expo.dev/modules",
+  "homepage": "https://github.com/dynalinks/dynalinks-react-native-sdk#readme",
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.9.2"

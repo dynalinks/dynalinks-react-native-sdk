@@ -1,6 +1,20 @@
 # expo-dynalinks-sdk
 
-Expo module for integrating [Dynalinks](https://dynalinks.app) deep linking SDK on iOS and Android.
+The official React Native SDK for [Dynalinks](https://dynalinks.app) - deferred deep linking and attribution for iOS and Android apps.
+
+## Features
+
+- **Deferred Deep Linking**: Track users who click links before installing your app
+- **Manual Link Resolution**: Resolve Dynalinks URLs to link data
+- **Cross-Platform**: Single API for both iOS and Android
+- **Type-Safe**: Full TypeScript support with comprehensive error handling
+
+## Requirements
+
+- React Native 0.70.0 or later
+- Expo SDK 49 or later
+- iOS 13.0 or later
+- Android API 21 or later
 
 ## Installation
 
@@ -8,224 +22,271 @@ Expo module for integrating [Dynalinks](https://dynalinks.app) deep linking SDK 
 npx expo install expo-dynalinks-sdk
 ```
 
-## Configuration
+## Setup
 
-### iOS
+### iOS Setup
 
-The iOS SDK is automatically linked via CocoaPods. No additional setup required.
+1. **Register your iOS app** in the [Dynalinks Console](https://dynalinks.app/console):
+   - Bundle Identifier (from Xcode project settings)
+   - Team ID (from Apple Developer account)
+   - App Store ID (from your app's App Store URL)
 
-### Android
+2. **Configure Associated Domains** in Xcode:
+   - Open your iOS project > Signing & Capabilities
+   - Add the "Associated Domains" capability
+   - Add your domain: `applinks:yourproject.dynalinks.app`
 
-Add JitPack repository to your project's `android/build.gradle` if not already present:
+See the [iOS integration guide](https://docs.dynalinks.app/integrations/ios.html) for detailed instructions.
 
-```gradle
-allprojects {
-    repositories {
-        maven { url 'https://jitpack.io' }
+### Android Setup
+
+1. **Register your Android app** in the [Dynalinks Console](https://dynalinks.app/console):
+   - Package identifier (from `build.gradle` applicationId)
+   - SHA-256 certificate fingerprint (run `./gradlew signingReport`)
+
+2. **Add intent filter** to your `AndroidManifest.xml`:
+
+```xml
+<activity
+    android:name=".MainActivity"
+    android:launchMode="singleTask">
+
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+            android:scheme="https"
+            android:host="yourproject.dynalinks.app" />
+    </intent-filter>
+</activity>
+```
+
+See the [Android integration guide](https://docs.dynalinks.app/integrations/android.html) for detailed instructions.
+
+## Usage
+
+### Initialize the SDK
+
+Configure the SDK as early as possible in your app's lifecycle:
+
+```typescript
+import Dynalinks, { DynalinksLogLevel } from 'expo-dynalinks-sdk';
+
+// In your App.tsx or index.js
+await Dynalinks.configure({
+  clientAPIKey: 'your-client-api-key',
+  logLevel: DynalinksLogLevel.debug, // Use .error in production
+});
+```
+
+### Check for Deferred Deep Links
+
+Check if the user came from a Dynalinks link before installing:
+
+```typescript
+import Dynalinks from 'expo-dynalinks-sdk';
+
+async function checkDeferredDeepLink() {
+  try {
+    const result = await Dynalinks.checkForDeferredDeepLink();
+
+    if (result.matched && result.link?.deepLinkValue) {
+      // User came from a deep link - navigate accordingly
+      navigation.navigate(result.link.deepLinkValue);
     }
+  } catch (error) {
+    if (error.code === 'SIMULATOR') {
+      // Running on simulator - deferred deep linking not available
+    } else {
+      console.error('Error checking deferred deep link:', error);
+    }
+  }
+}
+```
+
+### Handle Incoming Deep Links
+
+Use React Native's built-in `Linking` API to capture URLs, then resolve them with Dynalinks:
+
+```typescript
+import { useEffect } from 'react';
+import { Linking } from 'react-native';
+import Dynalinks from 'expo-dynalinks-sdk';
+
+function App() {
+  useEffect(() => {
+    // Listen for links while app is running
+    const subscription = Linking.addEventListener('url', async (event) => {
+      const result = await Dynalinks.resolveLink(event.url);
+
+      if (result.matched && result.link?.deepLinkValue) {
+        navigation.navigate(result.link.deepLinkValue);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  return <YourApp />;
+}
+```
+
+### Complete Example
+
+```typescript
+import { useEffect } from 'react';
+import { Linking } from 'react-native';
+import Dynalinks, { DynalinksLogLevel } from 'expo-dynalinks-sdk';
+
+function App() {
+  useEffect(() => {
+    initializeDynalinks();
+  }, []);
+
+  async function initializeDynalinks() {
+    try {
+      // 1. Configure SDK
+      await Dynalinks.configure({
+        clientAPIKey: 'your-api-key',
+        logLevel: DynalinksLogLevel.debug,
+      });
+
+      // 2. Check for deferred deep link
+      const result = await Dynalinks.checkForDeferredDeepLink();
+      if (result.matched) {
+        handleDeepLink(result.link?.deepLinkValue);
+      }
+
+      // 3. Listen for incoming links
+      Linking.addEventListener('url', async (event) => {
+        const result = await Dynalinks.resolveLink(event.url);
+        if (result.matched) {
+          handleDeepLink(result.link?.deepLinkValue);
+        }
+      });
+    } catch (error) {
+      console.error('Dynalinks initialization error:', error);
+    }
+  }
+
+  function handleDeepLink(deepLinkValue?: string) {
+    if (!deepLinkValue) return;
+
+    // Navigate based on deep link value
+    if (deepLinkValue.startsWith('product/')) {
+      const productId = deepLinkValue.replace('product/', '');
+      navigation.navigate('ProductDetails', { productId });
+    }
+  }
+
+  return <YourApp />;
 }
 ```
 
 ## API Reference
 
-### Functions
+### Dynalinks
 
-#### `configureDynalinks(apiKey: string): Promise<boolean>`
+| Method | Description |
+|--------|-------------|
+| `configure(config)` | Initialize the SDK with your API key |
+| `checkForDeferredDeepLink()` | Check for deferred deep link (first launch) |
+| `resolveLink(url)` | Resolve a URL to link data |
+| `version` | SDK version string |
 
-Configures the Dynalinks SDK with your API key and checks for deferred deep links.
+### DeepLinkResult
 
-**Parameters:**
-- `apiKey` - Your Dynalinks client API key from the [Dynalinks Console](https://console.dynalinks.app)
+| Property | Type | Description |
+|----------|------|-------------|
+| `matched` | `boolean` | Whether a link was matched |
+| `confidence` | `'high' \| 'medium' \| 'low'` | Match confidence |
+| `matchScore` | `number` | Match score (0-100) |
+| `link` | `LinkData` | The matched link data |
+| `isDeferred` | `boolean` | Whether from deferred deep link |
 
-**Returns:**
-- `Promise<boolean>` - `true` if configuration was successful, `false` otherwise
+### LinkData
 
-**Example:**
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique link identifier |
+| `name` | `string` | Link name (for display) |
+| `path` | `string` | Link path |
+| `shortenedPath` | `string` | Shortened path |
+| `url` | `string` | Original URL the link points to |
+| `fullUrl` | `string` | Full Dynalinks URL |
+| `deepLinkValue` | `string` | Value for in-app navigation |
+| `iosFallbackUrl` | `string` | iOS fallback URL |
+| `androidFallbackUrl` | `string` | Android fallback URL |
+| `enableForcedRedirect` | `boolean` | Whether forced redirect is enabled |
+| `socialTitle` | `string` | Social sharing title |
+| `socialDescription` | `string` | Social sharing description |
+| `socialImageUrl` | `string` | Social sharing image |
+| `clicks` | `number` | Number of clicks on this link |
+
+### Exceptions
+
+| Exception | Description |
+|-----------|-------------|
+| `NotConfiguredError` | SDK not configured |
+| `InvalidApiKeyError` | Invalid API key format |
+| `SimulatorError` | Running on simulator/emulator |
+| `NetworkError` | Network request failed |
+| `ServerError` | Server returned an error |
+| `InvalidResponseError` | Invalid server response |
+| `NoMatchError` | No matching link found |
+
+## Configuration Options
+
 ```typescript
-import { configureDynalinks } from 'expo-dynalinks-sdk';
-
-const success = await configureDynalinks('your-api-key');
-if (success) {
-  console.log('Dynalinks SDK configured successfully');
-}
+await Dynalinks.configure({
+  clientAPIKey: 'your-api-key',     // Required
+  logLevel: DynalinksLogLevel.debug, // Optional, default: .error
+  allowSimulator: false,             // Optional, default: false
+});
 ```
 
----
+### Log Levels
 
-#### `addDeferredDeepLinkListener(listener: (event: DeferredDeepLinkEvent) => void): Subscription`
+- `DynalinksLogLevel.none` - No logging
+- `DynalinksLogLevel.error` - Errors only (default)
+- `DynalinksLogLevel.warning` - Warnings and errors
+- `DynalinksLogLevel.info` - Info, warnings, and errors
+- `DynalinksLogLevel.debug` - All logs
 
-Adds a listener for deferred deep link events. This is triggered after `configureDynalinks()` completes checking for deferred deep links.
+## Migration from v0.1.0
 
-**Parameters:**
-- `listener` - Callback function that receives the deferred deep link event
-
-**Returns:**
-- `Subscription` - Object with a `remove()` method to unsubscribe
-
-**Example:**
+**Before (v0.1.0):**
 ```typescript
-import { addDeferredDeepLinkListener } from 'expo-dynalinks-sdk';
+import { configureDynalinks, addDeferredDeepLinkListener } from 'expo-dynalinks-sdk';
 
 const subscription = addDeferredDeepLinkListener((event) => {
   if (event.matched) {
-    console.log('Deep link matched:', event.link?.deep_link_value);
-    // Navigate to the appropriate screen
+    navigate(event.link?.deep_link_value);
   }
 });
 
-// Clean up when done
-subscription.remove();
+await configureDynalinks('api-key');
 ```
 
----
-
-### Types
-
-#### `DeferredDeepLinkEvent`
-
+**After (v1.0.0):**
 ```typescript
-type DeferredDeepLinkEvent = {
-  matched: boolean;                           // Whether a matching link was found
-  confidence?: 'high' | 'medium' | 'low';     // Confidence level of the match
-  match_score?: number;                       // Match score (0-100)
-  link?: DynalinksLinkData;                   // Link data if matched
-};
-```
+import Dynalinks from 'expo-dynalinks-sdk';
 
-#### `DynalinksLinkData`
+await Dynalinks.configure({ clientAPIKey: 'api-key' });
 
-```typescript
-type DynalinksLinkData = {
-  id: string;                                 // Unique identifier for the link
-  name?: string;                              // Link name
-  path?: string;                              // Path component of the link
-  shortened_path?: string;                    // Shortened path for the link
-  url?: string;                               // Original URL the link points to
-  full_url?: string;                          // Full Dynalinks URL
-  deep_link_value?: string;                   // Deep link value for routing in app
-  ios_deferred_deep_linking_enabled?: boolean;// iOS deferred deep linking enabled (iOS only)
-  android_fallback_url?: string;              // Android fallback URL
-  ios_fallback_url?: string;                  // iOS fallback URL
-  enable_forced_redirect?: boolean;           // Whether forced redirect is enabled
-  social_title?: string;                      // Social sharing title
-  social_description?: string;                // Social sharing description
-  social_image_url?: string;                  // Social sharing image URL
-  clicks?: number;                            // Number of clicks
-};
-```
-
-#### `Subscription`
-
-```typescript
-type Subscription = {
-  remove: () => void;  // Call to unsubscribe from events
-};
-```
-
----
-
-## Usage
-
-### Basic Setup
-
-```typescript
-import { useEffect } from 'react';
-import {
-  configureDynalinks,
-  addDeferredDeepLinkListener
-} from 'expo-dynalinks-sdk';
-
-function App() {
-  useEffect(() => {
-    // Set up the listener first
-    const subscription = addDeferredDeepLinkListener((event) => {
-      console.log('Deferred deep link event:', event);
-
-      if (event.matched && event.link?.deep_link_value) {
-        // Handle the deep link - navigate to appropriate screen
-        handleDeepLink(event.link.deep_link_value);
-      }
-    });
-
-    // Configure the SDK (this will trigger the listener when done)
-    configureDynalinks('your-api-key').catch((error) => {
-      console.error('Failed to configure Dynalinks:', error);
-    });
-
-    // Clean up on unmount
-    return () => subscription.remove();
-  }, []);
-
-  return (
-    // Your app content
-  );
+const result = await Dynalinks.checkForDeferredDeepLink();
+if (result.matched && result.link?.deepLinkValue) {
+  navigate(result.link.deepLinkValue);
 }
 ```
 
-### With Navigation
+## Support
 
-```typescript
-import { useEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import {
-  configureDynalinks,
-  addDeferredDeepLinkListener
-} from 'expo-dynalinks-sdk';
-
-function App() {
-  const navigation = useNavigation();
-
-  useEffect(() => {
-    const subscription = addDeferredDeepLinkListener((event) => {
-      if (event.matched && event.link?.deep_link_value) {
-        const deepLinkValue = event.link.deep_link_value;
-
-        // Parse deep_link_value and navigate accordingly
-        if (deepLinkValue.startsWith('product/')) {
-          const productId = deepLinkValue.replace('product/', '');
-          navigation.navigate('ProductDetails', { productId });
-        } else if (deepLinkValue.startsWith('invite/')) {
-          const inviteCode = deepLinkValue.replace('invite/', '');
-          navigation.navigate('AcceptInvite', { inviteCode });
-        }
-      }
-    });
-
-    configureDynalinks('your-api-key');
-
-    return () => subscription.remove();
-  }, [navigation]);
-
-  return (
-    // Your app content
-  );
-}
-```
-
----
-
-## How It Works
-
-1. **First App Launch After Install**: When a user clicks a Dynalinks URL and installs your app, the SDK captures the referrer information.
-
-2. **Deferred Deep Link Check**: When you call `configureDynalinks()`, the SDK:
-   - Initializes with your API key
-   - Checks for any deferred deep link from the install referrer
-   - Sends the result via the `onDeferredDeepLink` event
-
-3. **Handle the Event**: Your listener receives the event with match information and link data, allowing you to navigate users to the correct content.
-
----
-
-## Platform Support
-
-| Platform | Support |
-|----------|---------|
-| iOS      | 13.0+   |
-| Android  | API 21+ |
-
----
+- [Documentation](https://docs.dynalinks.app)
+- [GitHub Issues](https://github.com/dynalinks/dynalinks-react-native-sdk/issues)
+- [Email Support](mailto:admins@dynalinks.app)
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

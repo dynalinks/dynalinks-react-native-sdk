@@ -40,6 +40,16 @@ export class InvalidApiKeyError extends DynalinksError {
 }
 
 /**
+ * Invalid configuration.
+ */
+export class InvalidConfigError extends DynalinksError {
+  constructor(message: string = "Invalid configuration") {
+    super("INVALID_CONFIG", message);
+    this.name = "InvalidConfigError";
+  }
+}
+
+/**
  * Running on simulator/emulator without permission.
  */
 export class SimulatorError extends DynalinksError {
@@ -134,6 +144,8 @@ export function fromNativeError(code: string, message: string): DynalinksError {
       return new NotConfiguredError();
     case "INVALID_API_KEY":
       return new InvalidApiKeyError(message);
+    case "INVALID_CONFIG":
+      return new InvalidConfigError(message);
     case "SIMULATOR":
       return new SimulatorError();
     case "NETWORK_ERROR":

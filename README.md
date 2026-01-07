@@ -236,12 +236,13 @@ function App() {
 |-----------|-------------|
 | `NotConfiguredError` | SDK not configured |
 | `InvalidApiKeyError` | Invalid API key format |
+| `InvalidConfigError` | Invalid configuration (e.g., baseURL) |
 | `SimulatorError` | Running on simulator/emulator |
 | `NetworkError` | Network request failed |
 | `ServerError` | Server returned an error |
 | `InvalidResponseError` | Invalid server response |
 | `NoMatchError` | No matching link found |
-| `InvalidUrlError` | Invalid URL format (Android) |
+| `InvalidUrlError` | Invalid URL format |
 | `InstallReferrerUnavailableError` | Install referrer unavailable (Android) |
 | `InstallReferrerTimeoutError` | Install referrer timeout (Android) |
 

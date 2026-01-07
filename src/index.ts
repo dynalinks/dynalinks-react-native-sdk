@@ -11,6 +11,7 @@ export {
   DynalinksError,
   NotConfiguredError,
   InvalidApiKeyError,
+  InvalidConfigError,
   SimulatorError,
   NetworkError,
   ServerError,

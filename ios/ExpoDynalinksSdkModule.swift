@@ -28,8 +28,21 @@ public class ExpoDynalinksSdkModule: Module {
             throw Exception(name: "INVALID_API_KEY", description: "Invalid clientAPIKey in configuration: API key must be a non-empty string")
         }
 
-        let baseURLString = config["baseURL"] as? String
-        let baseURL = baseURLString.flatMap { URL(string: $0) } ?? URL(string: "https://dynalinks.app/api/v1")!
+        let baseURLString = (config["baseURL"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let defaultBaseURL = URL(string: "https://dynalinks.app/api/v1") else {
+            throw Exception(name: "INVALID_CONFIG", description: "Invalid default baseURL configuration")
+        }
+
+        let baseURL: URL
+        if let baseURLString = baseURLString, !baseURLString.isEmpty {
+            guard let parsedBaseURL = URL(string: baseURLString) else {
+                throw Exception(name: "INVALID_CONFIG", description: "Invalid baseURL in configuration")
+            }
+            baseURL = parsedBaseURL
+        } else {
+            baseURL = defaultBaseURL
+        }
+
         let logLevelString = config["logLevel"] as? String ?? "error"
         let allowSimulator = config["allowSimulator"] as? Bool ?? false
 
@@ -52,6 +65,8 @@ public class ExpoDynalinksSdkModule: Module {
             )
         } catch let error as DynalinksError {
             throw convertError(error)
+        } catch {
+            throw Exception(name: "UNKNOWN", description: "Unexpected error: \(error.localizedDescription)")
         }
     }
 
@@ -61,6 +76,8 @@ public class ExpoDynalinksSdkModule: Module {
             return encodeResult(result, isDeferred: true)
         } catch let error as DynalinksError {
             throw convertError(error)
+        } catch {
+            throw Exception(name: "UNKNOWN", description: "Unexpected error: \(error.localizedDescription)")
         }
     }
 
@@ -74,6 +91,8 @@ public class ExpoDynalinksSdkModule: Module {
             return encodeResult(result, isDeferred: false)
         } catch let error as DynalinksError {
             throw convertError(error)
+        } catch {
+            throw Exception(name: "UNKNOWN", description: "Unexpected error: \(error.localizedDescription)")
         }
     }
 

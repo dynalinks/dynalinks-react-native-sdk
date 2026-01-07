@@ -38,7 +38,7 @@ class ExpoDynalinksSdkModule : Module() {
     // Validate baseURL format
     val baseUri = Uri.parse(baseURL)
     if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
-      throw CodedException("INVALID_API_KEY", "Invalid baseURL format", null)
+      throw CodedException("INVALID_CONFIG", "Invalid baseURL format", null)
     }
 
     val logLevelString = config["logLevel"] as? String ?: "error"
@@ -86,8 +86,12 @@ class ExpoDynalinksSdkModule : Module() {
 
       val result = Dynalinks.handleAppLink(uri)
       encodeResult(result, isDeferred = false)
+    } catch (e: CodedException) {
+      throw e
     } catch (e: DynalinksError) {
       throw convertError(e)
+    } catch (e: Exception) {
+      throw CodedException("UNKNOWN", "Unexpected error: ${e.message}", e)
     }
   }
 

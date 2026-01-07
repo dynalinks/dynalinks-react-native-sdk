@@ -2,55 +2,152 @@ import ExpoModulesCore
 import DynalinksSDK
 
 public class ExpoDynalinksSdkModule: Module {
-    private var isDynalinksConfigured = false
-
     public func definition() -> ModuleDefinition {
         Name("ExpoDynalinksSdk")
 
-        Events("onDeferredDeepLink")
+        AsyncFunction("configure") { (config: [String: Any]) throws in
+            try await self.configure(config: config)
+        }
 
-        AsyncFunction("configureDynalinks") { (apiKey: String) -> Bool in
-            return await self.configureAndCheckDeepLink(apiKey: apiKey)
+        AsyncFunction("checkForDeferredDeepLink") { () -> [String: Any] in
+            return try await self.checkForDeferredDeepLink()
+        }
+
+        AsyncFunction("resolveLink") { (url: String) -> [String: Any] in
+            return try await self.resolveLink(url: url)
         }
     }
 
-    private func configureAndCheckDeepLink(apiKey: String) async -> Bool {
-        if !self.isDynalinksConfigured {
-            do {
-                try Dynalinks.configure(clientAPIKey: apiKey)
-                self.isDynalinksConfigured = true
-                print("[Dynalinks] SDK configured successfully")
-            } catch {
-                print("[Dynalinks] Failed to configure SDK: \(error)")
-                return false
-            }
+    private func configure(config: [String: Any]) async throws {
+        guard let clientAPIKey = config["clientAPIKey"] as? String else {
+            throw DynalinksConfigError.missingAPIKey
         }
 
-        Task {
-            do {
-                let result = try await Dynalinks.checkForDeferredDeepLink()
+        let baseURLString = config["baseURL"] as? String
+        let baseURL = baseURLString.flatMap { URL(string: $0) } ?? URL(string: "https://dynalinks.app/api/v1")!
+        let logLevelString = config["logLevel"] as? String ?? "error"
+        let allowSimulator = config["allowSimulator"] as? Bool ?? false
 
-                let jsonData = try JSONEncoder().encode(result)
-                let jsonString = String(data: jsonData, encoding: .utf8) ?? "{\"matched\":false}"
-                print("[Dynalinks] Deferred deep link result: \(jsonString)")
-
-                if let eventData = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
-                    await MainActor.run {
-                        self.sendEvent("onDeferredDeepLink", eventData)
-                    }
-                } else {
-                    await MainActor.run {
-                        self.sendEvent("onDeferredDeepLink", ["matched": false])
-                    }
-                }
-            } catch {
-                print("[Dynalinks] Error checking deferred deep link: \(error)")
-                await MainActor.run {
-                    self.sendEvent("onDeferredDeepLink", ["matched": false])
-                }
-            }
+        let logLevel: DynalinksLogLevel
+        switch logLevelString {
+        case "none": logLevel = .none
+        case "error": logLevel = .error
+        case "warning": logLevel = .warning
+        case "info": logLevel = .info
+        case "debug": logLevel = .debug
+        default: logLevel = .error
         }
 
-        return true
+        do {
+            try Dynalinks.configure(
+                clientAPIKey: clientAPIKey,
+                baseURL: baseURL,
+                logLevel: logLevel,
+                allowSimulator: allowSimulator
+            )
+        } catch let error as DynalinksError {
+            throw convertError(error)
+        }
     }
+
+    private func checkForDeferredDeepLink() async throws -> [String: Any] {
+        do {
+            let result = try await Dynalinks.checkForDeferredDeepLink()
+            return encodeResult(result, isDeferred: true)
+        } catch let error as DynalinksError {
+            throw convertError(error)
+        }
+    }
+
+    private func resolveLink(url: String) async throws -> [String: Any] {
+        guard let urlObj = URL(string: url) else {
+            throw DynalinksResolveError.invalidURL
+        }
+
+        do {
+            let result = try await Dynalinks.handleUniversalLink(url: urlObj)
+            return encodeResult(result, isDeferred: false)
+        } catch let error as DynalinksError {
+            throw convertError(error)
+        }
+    }
+
+    private func encodeResult(_ result: DeepLinkResult, isDeferred: Bool) -> [String: Any] {
+        var dict: [String: Any] = [
+            "matched": result.matched,
+            "is_deferred": isDeferred,
+        ]
+
+        if let confidence = result.confidence {
+            dict["confidence"] = confidence.rawValue
+        }
+
+        if let matchScore = result.matchScore {
+            dict["match_score"] = matchScore
+        }
+
+        if let link = result.link {
+            dict["link"] = encodeLinkData(link)
+        }
+
+        return dict
+    }
+
+    private func encodeLinkData(_ link: DeepLinkResult.LinkData) -> [String: Any?] {
+        return [
+            "id": link.id,
+            "name": link.name,
+            "path": link.path,
+            "shortened_path": link.shortenedPath,
+            "url": link.url?.absoluteString,
+            "full_url": link.fullURL?.absoluteString,
+            "deep_link_value": link.deepLinkValue,
+            "ios_fallback_url": link.iosFallbackURL?.absoluteString,
+            "android_fallback_url": link.androidFallbackURL?.absoluteString,
+            "enable_forced_redirect": link.enableForcedRedirect,
+            "social_title": link.socialTitle,
+            "social_description": link.socialDescription,
+            "social_image_url": link.socialImageURL?.absoluteString,
+            "clicks": link.clicks,
+        ]
+    }
+
+    private func convertError(_ error: DynalinksError) -> Exception {
+        let code: String
+        let message: String
+
+        switch error {
+        case .notConfigured:
+            code = "NOT_CONFIGURED"
+            message = error.errorDescription ?? "SDK not configured"
+        case .invalidAPIKey(let msg):
+            code = "INVALID_API_KEY"
+            message = msg
+        case .simulator:
+            code = "SIMULATOR"
+            message = error.errorDescription ?? "Not available on simulator"
+        case .networkError:
+            code = "NETWORK_ERROR"
+            message = error.errorDescription ?? "Network error"
+        case .invalidResponse:
+            code = "INVALID_RESPONSE"
+            message = error.errorDescription ?? "Invalid response"
+        case .serverError(let statusCode, let msg):
+            code = "SERVER_ERROR"
+            message = msg ?? "Server error: \(statusCode)"
+        case .noMatch:
+            code = "NO_MATCH"
+            message = error.errorDescription ?? "No match"
+        }
+
+        return Exception(name: code, description: message)
+    }
+}
+
+enum DynalinksConfigError: Error {
+    case missingAPIKey
+}
+
+enum DynalinksResolveError: Error {
+    case invalidURL
 }

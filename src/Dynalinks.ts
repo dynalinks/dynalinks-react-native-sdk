@@ -51,7 +51,10 @@ class DynalinksClass {
         allowSimulator: config.allowSimulator || false,
       });
     } catch (error: any) {
-      throw fromNativeError(error.code || "UNKNOWN", error.message);
+      throw fromNativeError(
+        error.code || "UNKNOWN",
+        error.message || `Unknown error: ${JSON.stringify(error)}`
+      );
     }
   }
 
@@ -89,7 +92,10 @@ class DynalinksClass {
       const result = await DynalinksModule.checkForDeferredDeepLink();
       return this.parseResult(result, true);
     } catch (error: any) {
-      throw fromNativeError(error.code || "UNKNOWN", error.message);
+      throw fromNativeError(
+        error.code || "UNKNOWN",
+        error.message || `Unknown error: ${JSON.stringify(error)}`
+      );
     }
   }
 
@@ -122,7 +128,10 @@ class DynalinksClass {
       const result = await DynalinksModule.resolveLink(url);
       return this.parseResult(result, false);
     } catch (error: any) {
-      throw fromNativeError(error.code || "UNKNOWN", error.message);
+      throw fromNativeError(
+        error.code || "UNKNOWN",
+        error.message || `Unknown error: ${JSON.stringify(error)}`
+      );
     }
   }
 

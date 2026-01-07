@@ -141,7 +141,7 @@ import Dynalinks, { DynalinksLogLevel } from 'expo-dynalinks-sdk';
 
 function App() {
   useEffect(() => {
-    let subscription;
+    let subscription: ReturnType<typeof Linking.addEventListener> | undefined;
 
     async function initializeDynalinks() {
       try {
@@ -179,9 +179,10 @@ function App() {
     if (!deepLinkValue) return;
 
     // Navigate based on deep link value
+    // Example: Use your navigation library (e.g., React Navigation)
     if (deepLinkValue.startsWith('product/')) {
       const productId = deepLinkValue.replace('product/', '');
-      navigation.navigate('ProductDetails', { productId });
+      // navigation.navigate('ProductDetails', { productId });
     }
   }
 

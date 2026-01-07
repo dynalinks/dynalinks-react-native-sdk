@@ -19,8 +19,13 @@ public class ExpoDynalinksSdkModule: Module {
     }
 
     private func configure(config: [String: Any]) async throws {
-        guard let clientAPIKey = config["clientAPIKey"] as? String else {
+        guard let clientAPIKeyRaw = config["clientAPIKey"] as? String else {
             throw Exception(name: "INVALID_API_KEY", description: "Missing clientAPIKey in configuration")
+        }
+
+        let clientAPIKey = clientAPIKeyRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clientAPIKey.isEmpty else {
+            throw Exception(name: "INVALID_API_KEY", description: "Invalid clientAPIKey in configuration: API key must be a non-empty string")
         }
 
         let baseURLString = config["baseURL"] as? String

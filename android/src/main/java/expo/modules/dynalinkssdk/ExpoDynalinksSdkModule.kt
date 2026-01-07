@@ -3,6 +3,7 @@ package expo.modules.dynalinkssdk
 import android.net.Uri
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.exception.CodedException
 import com.dynalinks.sdk.Dynalinks
 import com.dynalinks.sdk.DeepLinkResult
 import com.dynalinks.sdk.DynalinksError
@@ -27,17 +28,17 @@ class ExpoDynalinksSdkModule : Module() {
   }
 
   private suspend fun configure(config: Map<String, Any?>) {
-    val context = appContext.reactContext ?: throw Exception("Context not available")
+    val context = appContext.reactContext ?: throw CodedException("Context not available")
 
-    val clientAPIKey = config["clientAPIKey"] as? String
-      ?: throw IllegalArgumentException("Missing clientAPIKey")
+    val clientAPIKey = (config["clientAPIKey"] as? String)?.takeIf { it.isNotBlank() }
+      ?: throw CodedException("INVALID_API_KEY", "Missing or empty clientAPIKey", null)
 
     val baseURL = config["baseURL"] as? String ?: "https://dynalinks.app/api/v1"
 
     // Validate baseURL format
     val baseUri = Uri.parse(baseURL)
     if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
-      throw IllegalArgumentException("Invalid baseURL format")
+      throw CodedException("INVALID_API_KEY", "Invalid baseURL format", null)
     }
 
     val logLevelString = config["logLevel"] as? String ?: "error"
@@ -62,8 +63,6 @@ class ExpoDynalinksSdkModule : Module() {
       )
     } catch (e: DynalinksError) {
       throw convertError(e)
-    } catch (e: IllegalArgumentException) {
-      throw Exception("INVALID_API_KEY: ${e.message}")
     }
   }
 
@@ -82,15 +81,13 @@ class ExpoDynalinksSdkModule : Module() {
 
       // Validate the parsed URI
       if (uri.scheme.isNullOrEmpty() || uri.host.isNullOrEmpty()) {
-        throw Exception("INVALID_URL: URL must have a valid scheme and host")
+        throw CodedException("INVALID_URL", "URL must have a valid scheme and host", null)
       }
 
       val result = Dynalinks.handleAppLink(uri)
       encodeResult(result, isDeferred = false)
     } catch (e: DynalinksError) {
       throw convertError(e)
-    } catch (e: IllegalArgumentException) {
-      throw Exception("INVALID_URL: ${e.message}")
     }
   }
 
@@ -134,7 +131,7 @@ class ExpoDynalinksSdkModule : Module() {
     ).filterValues { it != null }
   }
 
-  private fun convertError(error: DynalinksError): Exception {
+  private fun convertError(error: DynalinksError): CodedException {
     val code = when (error) {
       is DynalinksError.NotConfigured -> "NOT_CONFIGURED"
       is DynalinksError.InvalidAPIKey -> "INVALID_API_KEY"
@@ -147,6 +144,6 @@ class ExpoDynalinksSdkModule : Module() {
       is DynalinksError.InstallReferrerUnavailable -> "INSTALL_REFERRER_UNAVAILABLE"
       is DynalinksError.InstallReferrerTimeout -> "INSTALL_REFERRER_TIMEOUT"
     }
-    return Exception("$code: ${error.message}")
+    return CodedException(code, error.message ?: "Unknown error", null)
   }
 }

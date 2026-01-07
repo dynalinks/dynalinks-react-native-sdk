@@ -1,6 +1,6 @@
-import DynalinksModule from './DynalinksModule';
-import { DynalinksConfig, DynalinksLogLevel, DeepLinkResult } from './types';
-import { fromNativeError } from './errors';
+import DynalinksModule from "./DynalinksModule.js";
+import { fromNativeError } from "./errors.js";
+import { DynalinksConfig, DynalinksLogLevel, DeepLinkResult } from "./types.js";
 
 /**
  * Main entry point for the Dynalinks SDK.
@@ -23,7 +23,7 @@ import { fromNativeError } from './errors';
  */
 class DynalinksClass {
   /** SDK version */
-  public readonly version = '1.0.0';
+  public readonly version = "1.0.0";
 
   /**
    * Configure the Dynalinks SDK.
@@ -51,7 +51,7 @@ class DynalinksClass {
         allowSimulator: config.allowSimulator || false,
       });
     } catch (error: any) {
-      throw fromNativeError(error.code || 'UNKNOWN', error.message);
+      throw fromNativeError(error.code || "UNKNOWN", error.message);
     }
   }
 
@@ -89,7 +89,7 @@ class DynalinksClass {
       const result = await DynalinksModule.checkForDeferredDeepLink();
       return this.parseResult(result, true);
     } catch (error: any) {
-      throw fromNativeError(error.code || 'UNKNOWN', error.message);
+      throw fromNativeError(error.code || "UNKNOWN", error.message);
     }
   }
 
@@ -122,7 +122,7 @@ class DynalinksClass {
       const result = await DynalinksModule.resolveLink(url);
       return this.parseResult(result, false);
     } catch (error: any) {
-      throw fromNativeError(error.code || 'UNKNOWN', error.message);
+      throw fromNativeError(error.code || "UNKNOWN", error.message);
     }
   }
 
@@ -135,22 +135,24 @@ class DynalinksClass {
       matched: nativeResult.matched || false,
       confidence: nativeResult.confidence,
       matchScore: nativeResult.match_score,
-      link: nativeResult.link ? {
-        id: nativeResult.link.id,
-        name: nativeResult.link.name,
-        path: nativeResult.link.path,
-        shortenedPath: nativeResult.link.shortened_path,
-        url: nativeResult.link.url,
-        fullUrl: nativeResult.link.full_url,
-        deepLinkValue: nativeResult.link.deep_link_value,
-        iosFallbackUrl: nativeResult.link.ios_fallback_url,
-        androidFallbackUrl: nativeResult.link.android_fallback_url,
-        enableForcedRedirect: nativeResult.link.enable_forced_redirect,
-        socialTitle: nativeResult.link.social_title,
-        socialDescription: nativeResult.link.social_description,
-        socialImageUrl: nativeResult.link.social_image_url,
-        clicks: nativeResult.link.clicks,
-      } : undefined,
+      link: nativeResult.link
+        ? {
+            id: nativeResult.link.id,
+            name: nativeResult.link.name,
+            path: nativeResult.link.path,
+            shortenedPath: nativeResult.link.shortened_path,
+            url: nativeResult.link.url,
+            fullUrl: nativeResult.link.full_url,
+            deepLinkValue: nativeResult.link.deep_link_value,
+            iosFallbackUrl: nativeResult.link.ios_fallback_url,
+            androidFallbackUrl: nativeResult.link.android_fallback_url,
+            enableForcedRedirect: nativeResult.link.enable_forced_redirect,
+            socialTitle: nativeResult.link.social_title,
+            socialDescription: nativeResult.link.social_description,
+            socialImageUrl: nativeResult.link.social_image_url,
+            clicks: nativeResult.link.clicks,
+          }
+        : undefined,
       isDeferred,
     };
   }

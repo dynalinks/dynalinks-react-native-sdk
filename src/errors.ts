@@ -6,7 +6,7 @@ export class DynalinksError extends Error {
 
   constructor(code: string, message: string) {
     super(message);
-    this.name = 'DynalinksError';
+    this.name = "DynalinksError";
     this.code = code;
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
@@ -21,8 +21,11 @@ export class DynalinksError extends Error {
  */
 export class NotConfiguredError extends DynalinksError {
   constructor() {
-    super('NOT_CONFIGURED', 'Dynalinks SDK has not been configured. Call Dynalinks.configure() first.');
-    this.name = 'NotConfiguredError';
+    super(
+      "NOT_CONFIGURED",
+      "Dynalinks SDK has not been configured. Call Dynalinks.configure() first.",
+    );
+    this.name = "NotConfiguredError";
   }
 }
 
@@ -30,9 +33,9 @@ export class NotConfiguredError extends DynalinksError {
  * Invalid API key format.
  */
 export class InvalidApiKeyError extends DynalinksError {
-  constructor(message: string = 'Invalid API key format') {
-    super('INVALID_API_KEY', message);
-    this.name = 'InvalidApiKeyError';
+  constructor(message: string = "Invalid API key format") {
+    super("INVALID_API_KEY", message);
+    this.name = "InvalidApiKeyError";
   }
 }
 
@@ -41,8 +44,11 @@ export class InvalidApiKeyError extends DynalinksError {
  */
 export class SimulatorError extends DynalinksError {
   constructor() {
-    super('SIMULATOR', 'Deferred deep linking is not available on simulator/emulator. Set allowSimulator: true in configuration for testing.');
-    this.name = 'SimulatorError';
+    super(
+      "SIMULATOR",
+      "Deferred deep linking is not available on simulator/emulator. Set allowSimulator: true in configuration for testing.",
+    );
+    this.name = "SimulatorError";
   }
 }
 
@@ -50,9 +56,9 @@ export class SimulatorError extends DynalinksError {
  * Network request failed.
  */
 export class NetworkError extends DynalinksError {
-  constructor(message: string = 'Network request failed') {
-    super('NETWORK_ERROR', message);
-    this.name = 'NetworkError';
+  constructor(message: string = "Network request failed") {
+    super("NETWORK_ERROR", message);
+    this.name = "NetworkError";
   }
 }
 
@@ -60,9 +66,9 @@ export class NetworkError extends DynalinksError {
  * Server returned an error.
  */
 export class ServerError extends DynalinksError {
-  constructor(message: string = 'Server error') {
-    super('SERVER_ERROR', message);
-    this.name = 'ServerError';
+  constructor(message: string = "Server error") {
+    super("SERVER_ERROR", message);
+    this.name = "ServerError";
   }
 }
 
@@ -71,8 +77,8 @@ export class ServerError extends DynalinksError {
  */
 export class InvalidResponseError extends DynalinksError {
   constructor() {
-    super('INVALID_RESPONSE', 'Received invalid response from server');
-    this.name = 'InvalidResponseError';
+    super("INVALID_RESPONSE", "Received invalid response from server");
+    this.name = "InvalidResponseError";
   }
 }
 
@@ -81,8 +87,8 @@ export class InvalidResponseError extends DynalinksError {
  */
 export class NoMatchError extends DynalinksError {
   constructor() {
-    super('NO_MATCH', 'No matching link found');
-    this.name = 'NoMatchError';
+    super("NO_MATCH", "No matching link found");
+    this.name = "NoMatchError";
   }
 }
 
@@ -91,8 +97,11 @@ export class NoMatchError extends DynalinksError {
  */
 export class InstallReferrerUnavailableError extends DynalinksError {
   constructor() {
-    super('INSTALL_REFERRER_UNAVAILABLE', 'Install referrer service is unavailable on this device');
-    this.name = 'InstallReferrerUnavailableError';
+    super(
+      "INSTALL_REFERRER_UNAVAILABLE",
+      "Install referrer service is unavailable on this device",
+    );
+    this.name = "InstallReferrerUnavailableError";
   }
 }
 
@@ -101,8 +110,8 @@ export class InstallReferrerUnavailableError extends DynalinksError {
  */
 export class InstallReferrerTimeoutError extends DynalinksError {
   constructor() {
-    super('INSTALL_REFERRER_TIMEOUT', 'Install referrer service timed out');
-    this.name = 'InstallReferrerTimeoutError';
+    super("INSTALL_REFERRER_TIMEOUT", "Install referrer service timed out");
+    this.name = "InstallReferrerTimeoutError";
   }
 }
 
@@ -110,9 +119,9 @@ export class InstallReferrerTimeoutError extends DynalinksError {
  * Invalid intent or URL format (Android only).
  */
 export class InvalidUrlError extends DynalinksError {
-  constructor(message: string = 'Invalid URL format') {
-    super('INVALID_URL', message);
-    this.name = 'InvalidUrlError';
+  constructor(message: string = "Invalid URL format") {
+    super("INVALID_URL", message);
+    this.name = "InvalidUrlError";
   }
 }
 
@@ -121,29 +130,29 @@ export class InvalidUrlError extends DynalinksError {
  */
 export function fromNativeError(code: string, message: string): DynalinksError {
   switch (code) {
-    case 'NOT_CONFIGURED':
+    case "NOT_CONFIGURED":
       return new NotConfiguredError();
-    case 'INVALID_API_KEY':
+    case "INVALID_API_KEY":
       return new InvalidApiKeyError(message);
-    case 'SIMULATOR':
+    case "SIMULATOR":
       return new SimulatorError();
-    case 'NETWORK_ERROR':
+    case "NETWORK_ERROR":
       return new NetworkError(message);
-    case 'SERVER_ERROR':
+    case "SERVER_ERROR":
       return new ServerError(message);
-    case 'INVALID_RESPONSE':
+    case "INVALID_RESPONSE":
       return new InvalidResponseError();
-    case 'NO_MATCH':
+    case "NO_MATCH":
       return new NoMatchError();
-    case 'INSTALL_REFERRER_UNAVAILABLE':
+    case "INSTALL_REFERRER_UNAVAILABLE":
       return new InstallReferrerUnavailableError();
-    case 'INSTALL_REFERRER_TIMEOUT':
+    case "INSTALL_REFERRER_TIMEOUT":
       return new InstallReferrerTimeoutError();
-    case 'INVALID_URL':
+    case "INVALID_URL":
       return new InvalidUrlError(message);
-    case 'INVALID_INTENT':
+    case "INVALID_INTENT":
       return new InvalidUrlError(message);
     default:
-      return new DynalinksError('UNKNOWN', message || 'Unknown error occurred');
+      return new DynalinksError("UNKNOWN", message || "Unknown error occurred");
   }
 }

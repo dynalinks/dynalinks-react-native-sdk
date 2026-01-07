@@ -16,11 +16,11 @@ export interface DynalinksConfig {
  * Log level for SDK logging.
  */
 export enum DynalinksLogLevel {
-  none = 'none',
-  error = 'error',
-  warning = 'warning',
-  info = 'info',
-  debug = 'debug',
+  none = "none",
+  error = "error",
+  warning = "warning",
+  info = "info",
+  debug = "debug",
 }
 
 /**
@@ -30,7 +30,7 @@ export interface DeepLinkResult {
   /** Whether a matching link was found */
   matched: boolean;
   /** Confidence level of the match */
-  confidence?: 'high' | 'medium' | 'low';
+  confidence?: "high" | "medium" | "low";
   /** Match score (0-100) */
   matchScore?: number;
   /** The matched link data */

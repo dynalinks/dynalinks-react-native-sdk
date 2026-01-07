@@ -1,4 +1,4 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireNativeModule } from "expo-modules-core";
 
 /**
  * Native module interface.
@@ -16,4 +16,6 @@ interface ExpoDynalinksSdkNativeModule {
   resolveLink(url: string): Promise<any>;
 }
 
-export default requireNativeModule<ExpoDynalinksSdkNativeModule>('ExpoDynalinksSdk');
+export default requireNativeModule<ExpoDynalinksSdkNativeModule>(
+  "ExpoDynalinksSdk",
+);

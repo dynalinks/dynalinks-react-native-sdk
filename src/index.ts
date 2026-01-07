@@ -1,14 +1,10 @@
 // Export main class as default
-export { default } from './Dynalinks';
+export { default } from "./Dynalinks.js";
 
 // Export types
-export type {
-  DynalinksConfig,
-  DeepLinkResult,
-  LinkData,
-} from './types';
+export type { DynalinksConfig, DeepLinkResult, LinkData } from "./types.js";
 
-export { DynalinksLogLevel } from './types';
+export { DynalinksLogLevel } from "./types.js";
 
 // Export errors
 export {
@@ -23,4 +19,4 @@ export {
   InstallReferrerUnavailableError,
   InstallReferrerTimeoutError,
   InvalidUrlError,
-} from './errors';
+} from "./errors.js";

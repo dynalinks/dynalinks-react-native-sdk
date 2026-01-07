@@ -57,6 +57,8 @@ export interface LinkData {
   fullUrl?: string;
   /** Deep link value for in-app navigation */
   deepLinkValue?: string;
+  /** Whether iOS deferred deep linking is enabled (iOS only) */
+  iosDeferredDeepLinkingEnabled?: boolean;
   /** iOS fallback URL */
   iosFallbackUrl?: string;
   /** Android fallback URL */

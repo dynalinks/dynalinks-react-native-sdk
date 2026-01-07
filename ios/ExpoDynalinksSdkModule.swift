@@ -28,21 +28,6 @@ public class ExpoDynalinksSdkModule: Module {
             throw Exception(name: "INVALID_API_KEY", description: "Invalid clientAPIKey in configuration: API key must be a non-empty string")
         }
 
-        let baseURLString = (config["baseURL"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let defaultBaseURL = URL(string: "https://dynalinks.app/api/v1") else {
-            throw Exception(name: "INVALID_CONFIG", description: "Invalid default baseURL configuration")
-        }
-
-        let baseURL: URL
-        if let baseURLString = baseURLString, !baseURLString.isEmpty {
-            guard let parsedBaseURL = URL(string: baseURLString) else {
-                throw Exception(name: "INVALID_CONFIG", description: "Invalid baseURL in configuration")
-            }
-            baseURL = parsedBaseURL
-        } else {
-            baseURL = defaultBaseURL
-        }
-
         let logLevelString = config["logLevel"] as? String ?? "error"
         let allowSimulator = config["allowSimulator"] as? Bool ?? false
 
@@ -57,12 +42,26 @@ public class ExpoDynalinksSdkModule: Module {
         }
 
         do {
-            try Dynalinks.configure(
-                clientAPIKey: clientAPIKey,
-                baseURL: baseURL,
-                logLevel: logLevel,
-                allowSimulator: allowSimulator
-            )
+            // Build configuration - only pass baseURL if provided
+            if let baseURLString = (config["baseURL"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !baseURLString.isEmpty {
+                guard let baseURL = URL(string: baseURLString) else {
+                    throw Exception(name: "INVALID_CONFIG", description: "Invalid baseURL in configuration")
+                }
+                try Dynalinks.configure(
+                    clientAPIKey: clientAPIKey,
+                    baseURL: baseURL,
+                    logLevel: logLevel,
+                    allowSimulator: allowSimulator
+                )
+            } else {
+                // Use native SDK's default baseURL
+                try Dynalinks.configure(
+                    clientAPIKey: clientAPIKey,
+                    logLevel: logLevel,
+                    allowSimulator: allowSimulator
+                )
+            }
         } catch let error as DynalinksError {
             throw convertError(error)
         } catch {
@@ -126,6 +125,7 @@ public class ExpoDynalinksSdkModule: Module {
             "url": link.url?.absoluteString,
             "full_url": link.fullURL?.absoluteString,
             "deep_link_value": link.deepLinkValue,
+            "ios_deferred_deep_linking_enabled": link.iosDeferredDeepLinkingEnabled,
             "ios_fallback_url": link.iosFallbackURL?.absoluteString,
             "android_fallback_url": link.androidFallbackURL?.absoluteString,
             "enable_forced_redirect": link.enableForcedRedirect,

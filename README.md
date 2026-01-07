@@ -222,6 +222,7 @@ function App() {
 | `url` | `string` | Original URL the link points to |
 | `fullUrl` | `string` | Full Dynalinks URL |
 | `deepLinkValue` | `string` | Value for in-app navigation |
+| `iosDeferredDeepLinkingEnabled` | `boolean` | Whether iOS deferred deep linking is enabled (iOS only) |
 | `iosFallbackUrl` | `string` | iOS fallback URL |
 | `androidFallbackUrl` | `string` | Android fallback URL |
 | `enableForcedRedirect` | `boolean` | Whether forced redirect is enabled |

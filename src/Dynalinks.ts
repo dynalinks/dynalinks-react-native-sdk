@@ -51,10 +51,14 @@ class DynalinksClass {
         allowSimulator: config.allowSimulator || false,
       });
     } catch (error: any) {
-      const code = error && typeof error === 'object' && 'code' in error ? error.code : "UNKNOWN";
-      const message = error && typeof error === 'object' && 'message' in error
-        ? error.message
-        : `Unknown error: ${JSON.stringify(error)}`;
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? error.code
+          : "UNKNOWN";
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? error.message
+          : `Unknown error: ${JSON.stringify(error)}`;
       throw fromNativeError(code, message);
     }
   }
@@ -93,10 +97,14 @@ class DynalinksClass {
       const result = await DynalinksModule.checkForDeferredDeepLink();
       return this.parseResult(result, true);
     } catch (error: any) {
-      const code = error && typeof error === 'object' && 'code' in error ? error.code : "UNKNOWN";
-      const message = error && typeof error === 'object' && 'message' in error
-        ? error.message
-        : `Unknown error: ${JSON.stringify(error)}`;
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? error.code
+          : "UNKNOWN";
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? error.message
+          : `Unknown error: ${JSON.stringify(error)}`;
       throw fromNativeError(code, message);
     }
   }
@@ -130,10 +138,14 @@ class DynalinksClass {
       const result = await DynalinksModule.resolveLink(url);
       return this.parseResult(result, false);
     } catch (error: any) {
-      const code = error && typeof error === 'object' && 'code' in error ? error.code : "UNKNOWN";
-      const message = error && typeof error === 'object' && 'message' in error
-        ? error.message
-        : `Unknown error: ${JSON.stringify(error)}`;
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? error.code
+          : "UNKNOWN";
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? error.message
+          : `Unknown error: ${JSON.stringify(error)}`;
       throw fromNativeError(code, message);
     }
   }

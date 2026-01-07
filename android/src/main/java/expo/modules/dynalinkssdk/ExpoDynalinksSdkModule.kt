@@ -33,14 +33,6 @@ class ExpoDynalinksSdkModule : Module() {
     val clientAPIKey = (config["clientAPIKey"] as? String)?.takeIf { it.isNotBlank() }
       ?: throw CodedException("INVALID_API_KEY", "Missing or empty clientAPIKey", null)
 
-    val baseURL = config["baseURL"] as? String ?: "https://dynalinks.app/api/v1"
-
-    // Validate baseURL format
-    val baseUri = Uri.parse(baseURL)
-    if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
-      throw CodedException("INVALID_CONFIG", "Invalid baseURL format", null)
-    }
-
     val logLevelString = config["logLevel"] as? String ?: "error"
     val allowSimulator = config["allowSimulator"] as? Boolean ?: false
 
@@ -54,13 +46,32 @@ class ExpoDynalinksSdkModule : Module() {
     }
 
     try {
-      Dynalinks.configure(
-        context = context,
-        clientAPIKey = clientAPIKey,
-        baseURL = baseURL,
-        logLevel = logLevel,
-        allowEmulator = allowSimulator
-      )
+      // Only pass baseURL if provided - let native SDK use its default otherwise
+      val baseURLString = (config["baseURL"] as? String)?.takeIf { it.isNotBlank() }
+
+      if (baseURLString != null) {
+        // Validate baseURL format if provided
+        val baseUri = Uri.parse(baseURLString)
+        if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
+          throw CodedException("INVALID_CONFIG", "Invalid baseURL format", null)
+        }
+
+        Dynalinks.configure(
+          context = context,
+          clientAPIKey = clientAPIKey,
+          baseURL = baseURLString,
+          logLevel = logLevel,
+          allowEmulator = allowSimulator
+        )
+      } else {
+        // Use native SDK's default baseURL
+        Dynalinks.configure(
+          context = context,
+          clientAPIKey = clientAPIKey,
+          logLevel = logLevel,
+          allowEmulator = allowSimulator
+        )
+      }
     } catch (e: DynalinksError) {
       throw convertError(e)
     }

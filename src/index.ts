@@ -1,19 +1,23 @@
-// Reexport the native module. On web, it will be resolved to ExpoDynalinksSdkModule.web.ts
-// and on native platforms to ExpoDynalinksSdkModule.ts
-export * from './ExpoDynalinksSdk.types';
-import { DeferredDeepLinkEvent } from './ExpoDynalinksSdk.types';
-import ExpoDynalinksSdkModule from './ExpoDynalinksSdkModule';
+// Export main class as default
+export { default } from './Dynalinks';
 
-export type Subscription = {
-  remove: () => void;
-};
+// Export types
+export type {
+  DynalinksConfig,
+  DeepLinkResult,
+  LinkData,
+} from './types';
 
-export async function configureDynalinks(apiKey: string): Promise<boolean> {
-  return await ExpoDynalinksSdkModule.configureDynalinks(apiKey);
-}
+export { DynalinksLogLevel } from './types';
 
-export function addDeferredDeepLinkListener(
-  listener: (event: DeferredDeepLinkEvent) => void,
-): Subscription {
-  return ExpoDynalinksSdkModule.addListener('onDeferredDeepLink', listener);
-}
+// Export errors
+export {
+  DynalinksError,
+  NotConfiguredError,
+  InvalidApiKeyError,
+  SimulatorError,
+  NetworkError,
+  ServerError,
+  InvalidResponseError,
+  NoMatchError,
+} from './errors';

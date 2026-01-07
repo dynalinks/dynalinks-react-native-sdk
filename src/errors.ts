@@ -87,6 +87,36 @@ export class NoMatchError extends DynalinksError {
 }
 
 /**
+ * Install referrer service unavailable (Android only).
+ */
+export class InstallReferrerUnavailableError extends DynalinksError {
+  constructor() {
+    super('INSTALL_REFERRER_UNAVAILABLE', 'Install referrer service is unavailable on this device');
+    this.name = 'InstallReferrerUnavailableError';
+  }
+}
+
+/**
+ * Install referrer service timeout (Android only).
+ */
+export class InstallReferrerTimeoutError extends DynalinksError {
+  constructor() {
+    super('INSTALL_REFERRER_TIMEOUT', 'Install referrer service timed out');
+    this.name = 'InstallReferrerTimeoutError';
+  }
+}
+
+/**
+ * Invalid intent or URL format (Android only).
+ */
+export class InvalidUrlError extends DynalinksError {
+  constructor(message: string = 'Invalid URL format') {
+    super('INVALID_URL', message);
+    this.name = 'InvalidUrlError';
+  }
+}
+
+/**
  * Convert native error code to DynalinksError.
  */
 export function fromNativeError(code: string, message: string): DynalinksError {
@@ -105,6 +135,14 @@ export function fromNativeError(code: string, message: string): DynalinksError {
       return new InvalidResponseError();
     case 'NO_MATCH':
       return new NoMatchError();
+    case 'INSTALL_REFERRER_UNAVAILABLE':
+      return new InstallReferrerUnavailableError();
+    case 'INSTALL_REFERRER_TIMEOUT':
+      return new InstallReferrerTimeoutError();
+    case 'INVALID_URL':
+      return new InvalidUrlError(message);
+    case 'INVALID_INTENT':
+      return new InvalidUrlError(message);
     default:
       return new DynalinksError('UNKNOWN', message || 'Unknown error occurred');
   }

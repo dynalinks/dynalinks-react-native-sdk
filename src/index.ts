@@ -20,4 +20,7 @@ export {
   ServerError,
   InvalidResponseError,
   NoMatchError,
+  InstallReferrerUnavailableError,
+  InstallReferrerTimeoutError,
+  InvalidUrlError,
 } from './errors';

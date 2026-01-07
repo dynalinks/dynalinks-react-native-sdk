@@ -33,6 +33,13 @@ class ExpoDynalinksSdkModule : Module() {
       ?: throw IllegalArgumentException("Missing clientAPIKey")
 
     val baseURL = config["baseURL"] as? String ?: "https://dynalinks.app/api/v1"
+
+    // Validate baseURL format
+    val baseUri = Uri.parse(baseURL)
+    if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
+      throw IllegalArgumentException("Invalid baseURL format")
+    }
+
     val logLevelString = config["logLevel"] as? String ?: "error"
     val allowSimulator = config["allowSimulator"] as? Boolean ?: false
 
@@ -72,10 +79,18 @@ class ExpoDynalinksSdkModule : Module() {
   private suspend fun resolveLink(url: String): Map<String, Any?> {
     return try {
       val uri = Uri.parse(url)
+
+      // Validate the parsed URI
+      if (uri.scheme.isNullOrEmpty() || uri.host.isNullOrEmpty()) {
+        throw Exception("INVALID_URL: URL must have a valid scheme and host")
+      }
+
       val result = Dynalinks.handleAppLink(uri)
       encodeResult(result, isDeferred = false)
     } catch (e: DynalinksError) {
       throw convertError(e)
+    } catch (e: IllegalArgumentException) {
+      throw Exception("INVALID_URL: ${e.message}")
     }
   }
 
@@ -124,7 +139,7 @@ class ExpoDynalinksSdkModule : Module() {
       is DynalinksError.NotConfigured -> "NOT_CONFIGURED"
       is DynalinksError.InvalidAPIKey -> "INVALID_API_KEY"
       is DynalinksError.Emulator -> "SIMULATOR"
-      is DynalinksError.InvalidIntent -> "INVALID_INTENT"
+      is DynalinksError.InvalidIntent -> "INVALID_URL"
       is DynalinksError.NetworkError -> "NETWORK_ERROR"
       is DynalinksError.InvalidResponse -> "INVALID_RESPONSE"
       is DynalinksError.ServerError -> "SERVER_ERROR"

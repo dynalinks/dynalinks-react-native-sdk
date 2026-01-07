@@ -1,68 +1,115 @@
 package expo.modules.dynalinkssdk
 
+import android.net.Uri
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import expo.modules.kotlin.Promise
+import expo.modules.kotlin.exception.CodedException
 import com.dynalinks.sdk.Dynalinks
 import com.dynalinks.sdk.DeepLinkResult
+import com.dynalinks.sdk.DynalinksError
+import com.dynalinks.sdk.DynalinksLogLevel
 import com.dynalinks.sdk.LinkData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ExpoDynalinksSdkModule : Module() {
-  private var isDynalinksConfigured = false
-
   override fun definition() = ModuleDefinition {
     Name("ExpoDynalinksSdk")
 
-    Events("onDeferredDeepLink")
+    AsyncFunction("configure") { config: Map<String, Any?> ->
+      configure(config)
+    }
 
-    AsyncFunction("configureDynalinks") { apiKey: String, promise: Promise ->
-      configureAndCheckDeepLink(apiKey, promise)
+    AsyncFunction("checkForDeferredDeepLink") {
+      checkForDeferredDeepLink()
+    }
+
+    AsyncFunction("resolveLink") { url: String ->
+      resolveLink(url)
     }
   }
 
-  private fun configureAndCheckDeepLink(apiKey: String, promise: Promise) {
-    val context = appContext.reactContext ?: run {
-      promise.resolve(false)
-      return
+  private suspend fun configure(config: Map<String, Any?>) {
+    val context = appContext.reactContext ?: throw CodedException("Context not available")
+
+    val clientAPIKey = (config["clientAPIKey"] as? String)?.takeIf { it.isNotBlank() }
+      ?: throw CodedException("INVALID_API_KEY", "Missing or empty clientAPIKey", null)
+
+    val logLevelString = config["logLevel"] as? String ?: "error"
+    val allowSimulator = config["allowSimulator"] as? Boolean ?: false
+
+    val logLevel = when (logLevelString) {
+      "none" -> DynalinksLogLevel.NONE
+      "error" -> DynalinksLogLevel.ERROR
+      "warning" -> DynalinksLogLevel.WARNING
+      "info" -> DynalinksLogLevel.INFO
+      "debug" -> DynalinksLogLevel.DEBUG
+      else -> DynalinksLogLevel.ERROR
     }
 
-    if (!isDynalinksConfigured) {
-      try {
+    try {
+      // Only pass baseURL if provided - let native SDK use its default otherwise
+      val baseURLString = (config["baseURL"] as? String)?.takeIf { it.isNotBlank() }
+
+      if (baseURLString != null) {
+        // Validate baseURL format if provided
+        val baseUri = Uri.parse(baseURLString)
+        if (baseUri.scheme.isNullOrEmpty() || baseUri.host.isNullOrEmpty()) {
+          throw CodedException("INVALID_CONFIG", "Invalid baseURL format", null)
+        }
+
         Dynalinks.configure(
           context = context,
-          clientAPIKey = apiKey
+          clientAPIKey = clientAPIKey,
+          baseURL = baseURLString,
+          logLevel = logLevel,
+          allowEmulator = allowSimulator
         )
-        isDynalinksConfigured = true
-        println("[Dynalinks] SDK configured successfully")
-      } catch (e: Exception) {
-        println("[Dynalinks] Failed to configure SDK: ${e.message}")
-        promise.resolve(false)
-        return
+      } else {
+        // Use native SDK's default baseURL
+        Dynalinks.configure(
+          context = context,
+          clientAPIKey = clientAPIKey,
+          logLevel = logLevel,
+          allowEmulator = allowSimulator
+        )
       }
+    } catch (e: DynalinksError) {
+      throw convertError(e)
     }
-
-    // Check for deferred deep link in a coroutine
-    CoroutineScope(Dispatchers.Main).launch {
-      try {
-        val result = Dynalinks.checkForDeferredDeepLink()
-        val eventData = convertDeepLinkResultToMap(result)
-        println("[Dynalinks] Deferred deep link result: $eventData")
-        sendEvent("onDeferredDeepLink", eventData)
-      } catch (e: Exception) {
-        println("[Dynalinks] Error checking deferred deep link: ${e.message}")
-        sendEvent("onDeferredDeepLink", mapOf("matched" to false))
-      }
-    }
-
-    promise.resolve(true)
   }
 
-  private fun convertDeepLinkResultToMap(result: DeepLinkResult): Map<String, Any?> {
+  private suspend fun checkForDeferredDeepLink(): Map<String, Any?> {
+    return try {
+      val result = Dynalinks.checkForDeferredDeepLink()
+      encodeResult(result, isDeferred = true)
+    } catch (e: DynalinksError) {
+      throw convertError(e)
+    }
+  }
+
+  private suspend fun resolveLink(url: String): Map<String, Any?> {
+    return try {
+      val uri = Uri.parse(url)
+
+      // Validate the parsed URI
+      if (uri.scheme.isNullOrEmpty() || uri.host.isNullOrEmpty()) {
+        throw CodedException("INVALID_URL", "URL must have a valid scheme and host", null)
+      }
+
+      val result = Dynalinks.handleAppLink(uri)
+      encodeResult(result, isDeferred = false)
+    } catch (e: CodedException) {
+      throw e
+    } catch (e: DynalinksError) {
+      throw convertError(e)
+    } catch (e: Exception) {
+      throw CodedException("UNKNOWN", "Unexpected error: ${e.message}", e)
+    }
+  }
+
+  private fun encodeResult(result: DeepLinkResult, isDeferred: Boolean): Map<String, Any?> {
     val map = mutableMapOf<String, Any?>(
-      "matched" to result.matched
+      "matched" to result.matched,
+      "is_deferred" to isDeferred
     )
 
     result.confidence?.let {
@@ -73,14 +120,14 @@ class ExpoDynalinksSdkModule : Module() {
       map["match_score"] = it
     }
 
-    result.link?.let { linkData ->
-      map["link"] = convertLinkDataToMap(linkData)
+    result.link?.let { link ->
+      map["link"] = encodeLinkData(link)
     }
 
     return map
   }
 
-  private fun convertLinkDataToMap(linkData: LinkData): Map<String, Any?> {
+  private fun encodeLinkData(linkData: LinkData): Map<String, Any?> {
     return mapOf(
       "id" to linkData.id,
       "name" to linkData.name,
@@ -97,5 +144,21 @@ class ExpoDynalinksSdkModule : Module() {
       "social_image_url" to linkData.socialImageUrl,
       "clicks" to linkData.clicks
     ).filterValues { it != null }
+  }
+
+  private fun convertError(error: DynalinksError): CodedException {
+    val code = when (error) {
+      is DynalinksError.NotConfigured -> "NOT_CONFIGURED"
+      is DynalinksError.InvalidAPIKey -> "INVALID_API_KEY"
+      is DynalinksError.Emulator -> "SIMULATOR"
+      is DynalinksError.InvalidIntent -> "INVALID_URL"
+      is DynalinksError.NetworkError -> "NETWORK_ERROR"
+      is DynalinksError.InvalidResponse -> "INVALID_RESPONSE"
+      is DynalinksError.ServerError -> "SERVER_ERROR"
+      is DynalinksError.NoMatch -> "NO_MATCH"
+      is DynalinksError.InstallReferrerUnavailable -> "INSTALL_REFERRER_UNAVAILABLE"
+      is DynalinksError.InstallReferrerTimeout -> "INSTALL_REFERRER_TIMEOUT"
+    }
+    return CodedException(code, error.message ?: "Unknown error", null)
   }
 }

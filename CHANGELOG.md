@@ -30,6 +30,6 @@ All notable changes to this project will be documented in this file.
 
 See README.md for migration guide from v0.1.0.
 
-## [0.1.0] - 2024-01-01
+## [0.1.0]
 
 Initial release.

@@ -141,34 +141,39 @@ import Dynalinks, { DynalinksLogLevel } from 'expo-dynalinks-sdk';
 
 function App() {
   useEffect(() => {
-    initializeDynalinks();
-  }, []);
+    let subscription;
 
-  async function initializeDynalinks() {
-    try {
-      // 1. Configure SDK
-      await Dynalinks.configure({
-        clientAPIKey: 'your-api-key',
-        logLevel: DynalinksLogLevel.debug,
-      });
+    async function initializeDynalinks() {
+      try {
+        // 1. Configure SDK
+        await Dynalinks.configure({
+          clientAPIKey: 'your-api-key',
+          logLevel: DynalinksLogLevel.debug,
+        });
 
-      // 2. Check for deferred deep link
-      const result = await Dynalinks.checkForDeferredDeepLink();
-      if (result.matched) {
-        handleDeepLink(result.link?.deepLinkValue);
-      }
-
-      // 3. Listen for incoming links
-      Linking.addEventListener('url', async (event) => {
-        const result = await Dynalinks.resolveLink(event.url);
+        // 2. Check for deferred deep link
+        const result = await Dynalinks.checkForDeferredDeepLink();
         if (result.matched) {
           handleDeepLink(result.link?.deepLinkValue);
         }
-      });
-    } catch (error) {
-      console.error('Dynalinks initialization error:', error);
+
+        // 3. Listen for incoming links
+        subscription = Linking.addEventListener('url', async (event) => {
+          const result = await Dynalinks.resolveLink(event.url);
+          if (result.matched) {
+            handleDeepLink(result.link?.deepLinkValue);
+          }
+        });
+      } catch (error) {
+        console.error('Dynalinks initialization error:', error);
+      }
     }
-  }
+
+    initializeDynalinks();
+
+    // Clean up on unmount
+    return () => subscription?.remove();
+  }, []);
 
   function handleDeepLink(deepLinkValue?: string) {
     if (!deepLinkValue) return;
@@ -235,6 +240,9 @@ function App() {
 | `ServerError` | Server returned an error |
 | `InvalidResponseError` | Invalid server response |
 | `NoMatchError` | No matching link found |
+| `InvalidUrlError` | Invalid URL format (Android) |
+| `InstallReferrerUnavailableError` | Install referrer unavailable (Android) |
+| `InstallReferrerTimeoutError` | Install referrer timeout (Android) |
 
 ## Configuration Options
 

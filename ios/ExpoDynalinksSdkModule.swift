@@ -20,7 +20,7 @@ public class ExpoDynalinksSdkModule: Module {
 
     private func configure(config: [String: Any]) async throws {
         guard let clientAPIKey = config["clientAPIKey"] as? String else {
-            throw DynalinksConfigError.missingAPIKey
+            throw Exception(name: "INVALID_API_KEY", description: "Missing clientAPIKey in configuration")
         }
 
         let baseURLString = config["baseURL"] as? String
@@ -61,7 +61,7 @@ public class ExpoDynalinksSdkModule: Module {
 
     private func resolveLink(url: String) async throws -> [String: Any] {
         guard let urlObj = URL(string: url) else {
-            throw DynalinksResolveError.invalidURL
+            throw Exception(name: "INVALID_URL", description: "Invalid URL format")
         }
 
         do {
@@ -142,12 +142,4 @@ public class ExpoDynalinksSdkModule: Module {
 
         return Exception(name: code, description: message)
     }
-}
-
-enum DynalinksConfigError: Error {
-    case missingAPIKey
-}
-
-enum DynalinksResolveError: Error {
-    case invalidURL
 }

@@ -1,6 +1,6 @@
-import DynalinksModule from "./DynalinksModule.js";
-import { fromNativeError } from "./errors.js";
-import { DynalinksConfig, DynalinksLogLevel, DeepLinkResult } from "./types.js";
+import DynalinksModule from "./DynalinksModule";
+import { fromNativeError } from "./errors";
+import { DynalinksConfig, DynalinksLogLevel, DeepLinkResult } from "./types";
 
 /**
  * Main entry point for the Dynalinks SDK.

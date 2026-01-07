@@ -13,7 +13,7 @@ The official React Native SDK for [Dynalinks](https://dynalinks.app) - deferred 
 
 - React Native 0.70.0 or later
 - Expo SDK 49 or later
-- iOS 13.0 or later
+- iOS 16.0 or later
 - Android API 21 or later
 
 ## Installation
